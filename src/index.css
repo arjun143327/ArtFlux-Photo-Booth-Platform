@@ -1,0 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-museum-bg text-museum-text font-sans antialiased
+    transition-colors duration-300;
+  }
+
+  .dark body {
+    @apply bg-darkroom-bg text-darkroom-text;
+  }
+}
+
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+ @apply bg-gray-300 rounded-full dark:bg-gray-700;
+}
+
