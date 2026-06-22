@@ -1,20 +1,38 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+  
+  --color-museum-bg: #F5F1E8;
+  --color-museum-surface: #FFFFFF;
+  --color-museum-text: #111111;
+  --color-museum-primary: #0057FF;
+  --color-museum-secondary: #FF6B00;
+  
+  --color-darkroom-bg: #0F0F10;
+  --color-darkroom-surface: #18181B;
+  --color-darkroom-text: #FAFAFA;
+  --color-darkroom-accent: #EAB308;
 
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+}
+
+/* Base styles */
 @layer base {
   body {
-    @apply bg-museum-bg text-museum-text font-sans antialiased
-    transition-colors duration-300;
+    background-color: var(--color-museum-bg);
+    color: var(--color-museum-text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 300ms, color 300ms;
   }
 
   .dark body {
-    @apply bg-darkroom-bg text-darkroom-text;
+    background-color: var(--color-darkroom-bg);
+    color: var(--color-darkroom-text);
   }
 }
-
 
 ::-webkit-scrollbar {
   width: 6px;
@@ -26,6 +44,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
- @apply bg-gray-300 rounded-full dark:bg-gray-700;
+  background-color: #d1d5db; /* gray-300 */
+  border-radius: 9999px;
 }
 
+.dark ::-webkit-scrollbar-thumb {
+  background-color: #3f3f46; /* zinc-700 */
+}
