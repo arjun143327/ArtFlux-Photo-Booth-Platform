@@ -1,5 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore, type EffectType } from '../store/useAppStore';
+import { useEffectPreviews } from '../store/useEffectPreviews';
 import { SlidersHorizontal, RotateCcw, Sparkles } from 'lucide-react';
 
 interface EffectConfig {
@@ -28,7 +30,7 @@ function seededRandom(seed: number): () => number {
   };
 }
 
-/* ── SVG effect preview thumbnails ─────────────────────────── */
+/* ── SVG fallback thumbnails (used until live previews load) ─ */
 
 function EffectThumbnail({ effect, index }: { effect: EffectType; index: number }) {
   const common = 'w-full h-full rounded-xl';
@@ -265,20 +267,22 @@ function IntensitySlider() {
         {/* Track background */}
         <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-1.5 rounded-full bg-gray-200 dark:bg-zinc-800 overflow-hidden">
           {/* Filled portion */}
-          <div
-            className="h-full rounded-full bg-museum-primary dark:bg-darkroom-accent transition-[width] duration-75"
-            style={{ width: `${intensity}%` }}
+          <motion.div
+            className="h-full rounded-full bg-museum-primary dark:bg-darkroom-accent"
+            animate={{ width: `${intensity}%` }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           />
         </div>
 
         {/* Thumb */}
-        <div
+        <motion.div
           className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full
             bg-white dark:bg-zinc-200 border-2 border-museum-primary dark:border-darkroom-accent
             shadow-sm dark:shadow-black/30
-            transition-transform duration-150
-            ${isDragging ? 'scale-125' : 'group-hover:scale-110'}`}
-          style={{ left: `${intensity}%` }}
+            ${isDragging ? 'scale-125' : ''}`}
+          animate={{ left: `${intensity}%`, scale: isDragging ? 1.25 : 1 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          whileHover={{ scale: 1.1 }}
         />
       </div>
     </div>
@@ -287,8 +291,16 @@ function IntensitySlider() {
 
 /* ── Main Panel ──────────────────────────────────────────── */
 
+const cardVariants = {
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0 },
+  hover: { y: -2 },
+  tap: { scale: 0.97 },
+};
+
 export default function EffectsPanel() {
   const { activeEffect, setActiveEffect, setIntensity } = useAppStore();
+  const previews = useEffectPreviews((s) => s.previews);
   const defaultIntensity = 70;
 
   const handleEffectChange = (id: EffectType) => {
@@ -303,11 +315,26 @@ export default function EffectsPanel() {
   const isDefault = activeEffect === 'none';
 
   return (
-    <section className="w-full xl:w-[350px] bg-museum-surface dark:bg-darkroom-surface border-l border-gray-200 dark:border-zinc-800 p-5 flex flex-col gap-5 overflow-y-auto shrink-0 transition-colors duration-300">
+    <motion.section
+      initial={{ opacity: 0, x: 40 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+      className="w-full flex-1 min-w-[280px] max-w-[350px] bg-museum-surface dark:bg-darkroom-surface border-l border-gray-200 dark:border-zinc-800 p-5 flex flex-col gap-5 overflow-y-auto shrink-0 transition-colors duration-300"
+    >
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.15, duration: 0.3 }}
+        className="flex items-center justify-between"
+      >
         <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-museum-primary dark:text-darkroom-accent" />
+          <motion.span
+            animate={{ rotate: [0, -10, 10, 0] }}
+            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+          >
+            <Sparkles className="w-4 h-4 text-museum-primary dark:text-darkroom-accent" />
+          </motion.span>
           <h2 className="text-sm font-semibold text-museum-text dark:text-darkroom-text">
             Effects
           </h2>
@@ -325,27 +352,53 @@ export default function EffectsPanel() {
           <RotateCcw className="w-3.5 h-3.5" />
           Reset
         </button>
-      </div>
+      </motion.div>
 
       {/* Effect Cards Grid */}
-      <div className="grid grid-cols-2 gap-3">
+      <motion.div
+        className="grid grid-cols-2 gap-3"
+        initial="initial"
+        animate="animate"
+        variants={{ animate: { transition: { staggerChildren: 0.05 } } }}
+      >
         {effects.map((effect, i) => {
           const isActive = activeEffect === effect.id;
+          const livePreview = previews[effect.id];
 
           return (
-            <button
+            <motion.button
               key={effect.id}
+              variants={cardVariants}
+              whileHover="hover"
+              whileTap="tap"
               onClick={() => handleEffectChange(effect.id)}
-              className={`group relative flex flex-col rounded-2xl overflow-hidden text-left
-                transition-all duration-200 ease-out
+              className={`group relative flex flex-col rounded-2xl overflow-hidden text-left cursor-pointer
                 ${isActive
                   ? 'ring-2 ring-museum-primary dark:ring-darkroom-accent ring-offset-2 ring-offset-museum-surface dark:ring-offset-darkroom-surface shadow-md'
                   : 'hover:ring-1 hover:ring-gray-300 dark:hover:ring-zinc-600 hover:shadow-sm'
                 }`}
             >
-              {/* Thumbnail / Preview */}
+              {/* Thumbnail / Preview — live camera frame when available */}
               <div className="aspect-[3/2] bg-gray-50 dark:bg-zinc-900 overflow-hidden">
-                <EffectThumbnail effect={effect.id} index={i} />
+                {livePreview ? (
+                  <img
+                    src={livePreview}
+                    alt={effect.label}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <EffectThumbnail effect={effect.id} index={i} />
+                )}
+
+                {/* Live badge */}
+                {livePreview && (
+                  <span className="absolute top-1.5 right-1.5 flex items-center gap-1
+                    px-1.5 py-0.5 rounded-md bg-black/50 backdrop-blur-sm text-white/80
+                    text-[8px] font-semibold tracking-wider">
+                    <span className="w-1 h-1 rounded-full bg-green-400 animate-pulse" />
+                    LIVE
+                  </span>
+                )}
               </div>
 
               {/* Label bar */}
@@ -368,37 +421,59 @@ export default function EffectsPanel() {
                 </div>
 
                 {/* Active indicator */}
-                <span className={`w-2 h-2 rounded-full shrink-0 transition-all duration-200 ${
-                  isActive
-                    ? 'bg-museum-primary dark:bg-darkroom-accent scale-100'
-                    : 'bg-transparent scale-0 group-hover:scale-100 group-hover:bg-gray-300 dark:group-hover:bg-zinc-600'
-                }`} />
+                <motion.span
+                  className={`w-2 h-2 rounded-full shrink-0 ${
+                    isActive
+                      ? 'bg-museum-primary dark:bg-darkroom-accent'
+                      : 'bg-gray-300 dark:bg-zinc-600'
+                  }`}
+                  animate={{ scale: isActive ? 1 : 0.6, opacity: isActive ? 1 : 0.4 }}
+                  transition={{ duration: 0.2 }}
+                />
               </div>
-            </button>
+            </motion.button>
           );
         })}
-      </div>
+      </motion.div>
 
       {/* Intensity Slider */}
-      {activeEffect !== 'none' && (
-        <div className="pt-2 border-t border-gray-100 dark:border-zinc-800/60">
-          <IntensitySlider />
-        </div>
-      )}
+      <AnimatePresence>
+        {activeEffect !== 'none' && (
+          <motion.div
+            key="intensity"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="pt-2 border-t border-gray-100 dark:border-zinc-800/60 overflow-hidden"
+          >
+            <IntensitySlider />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Tip */}
-      {activeEffect === 'none' && (
-        <div className="text-center py-6 px-4 bg-gray-50 dark:bg-zinc-800/30 rounded-2xl border border-dashed border-gray-200 dark:border-zinc-700/50">
-          <p className="text-xs text-gray-400 dark:text-zinc-500 leading-relaxed">
-            Select an effect above to transform your camera feed in real-time.
-          </p>
-        </div>
-      )}
+      <AnimatePresence>
+        {activeEffect === 'none' && (
+          <motion.div
+            key="tip"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.3 }}
+            className="text-center py-6 px-4 bg-gray-50 dark:bg-zinc-800/30 rounded-2xl border border-dashed border-gray-200 dark:border-zinc-700/50"
+          >
+            <p className="text-xs text-gray-400 dark:text-zinc-500 leading-relaxed">
+              Select an effect above to transform your camera feed in real-time.
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Version label */}
       <div className="mt-auto pt-4 text-[10px] text-gray-300 dark:text-zinc-700 font-mono tracking-wider text-center">
         v1.0.0 · {effects.length} effects
       </div>
-    </section>
+    </motion.section>
   );
 }

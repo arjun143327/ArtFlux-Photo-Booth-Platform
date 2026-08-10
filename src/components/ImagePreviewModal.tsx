@@ -1,4 +1,5 @@
 import { useEffect, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
 import { X, ChevronLeft, ChevronRight, Trash2, Download } from 'lucide-react';
 
@@ -68,88 +69,117 @@ export default function ImagePreviewModal({ index, onClose, onNavigate }: Props)
   if (!capturedImages[index]) return null;
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.25 }}
       className="fixed inset-0 z-50 flex items-center justify-center"
       onClick={onClose}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+      />
 
       {/* Close button (top-right) */}
-      <button
+      <motion.button
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.15 }}
+        whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.2)' }}
+        whileTap={{ scale: 0.9 }}
         onClick={onClose}
-        className="absolute top-4 right-4 z-10 p-2 rounded-xl bg-white/10 text-white/70
-          hover:bg-white/20 hover:text-white transition-all duration-200
-          active:scale-90"
+        className="absolute top-4 right-4 z-10 p-2 rounded-xl bg-white/10 text-white/70 transition-colors duration-200"
         title="Close (Esc)"
       >
         <X className="w-5 h-5" />
-      </button>
+      </motion.button>
 
       {/* Previous button */}
       {index > 0 && (
-        <button
+        <motion.button
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+          whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.2)' }}
+          whileTap={{ scale: 0.9 }}
           onClick={(e) => { e.stopPropagation(); goPrev(); }}
           className="absolute left-4 top-1/2 -translate-y-1/2 z-10 p-3 rounded-xl
-            bg-white/10 text-white/70 hover:bg-white/20 hover:text-white
-            transition-all duration-200 active:scale-90"
+            bg-white/10 text-white/70 transition-colors duration-200"
           title="Previous (←)"
         >
           <ChevronLeft className="w-6 h-6" />
-        </button>
+        </motion.button>
       )}
 
       {/* Next button */}
       {index < total - 1 && (
-        <button
+        <motion.button
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+          whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.2)' }}
+          whileTap={{ scale: 0.9 }}
           onClick={(e) => { e.stopPropagation(); goNext(); }}
           className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-3 rounded-xl
-            bg-white/10 text-white/70 hover:bg-white/20 hover:text-white
-            transition-all duration-200 active:scale-90"
+            bg-white/10 text-white/70 transition-colors duration-200"
           title="Next (→)"
         >
           <ChevronRight className="w-6 h-6" />
-        </button>
+        </motion.button>
       )}
 
       {/* Bottom toolbar */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3">
-        {/* Counter */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.25 }}
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3"
+      >
         <div className="px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm text-white/80 text-xs font-medium">
           {index + 1} of {total}
         </div>
 
-        {/* Download */}
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.2)' }}
+          whileTap={{ scale: 0.9 }}
           onClick={(e) => { e.stopPropagation(); handleDownload(); }}
-          className="p-2 rounded-xl bg-white/10 backdrop-blur-sm text-white/70
-            hover:bg-white/20 hover:text-white transition-all duration-200 active:scale-90"
+          className="p-2 rounded-xl bg-white/10 backdrop-blur-sm text-white/70 transition-colors duration-200"
           title="Download"
         >
           <Download className="w-4 h-4" />
-        </button>
+        </motion.button>
 
-        {/* Delete */}
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.9 }}
           onClick={(e) => { e.stopPropagation(); handleDelete(); }}
           className="p-2 rounded-xl bg-red-500/20 backdrop-blur-sm text-red-400
-            hover:bg-red-500/30 hover:text-red-300 transition-all duration-200 active:scale-90"
+            hover:bg-red-500/30 hover:text-red-300 transition-colors duration-200"
           title="Delete (Del)"
         >
           <Trash2 className="w-4 h-4" />
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
 
       {/* Image */}
-      <div className="relative z-10 max-w-[90vw] max-h-[85vh]" onClick={(e) => e.stopPropagation()}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.92 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.1, duration: 0.3, ease: 'easeOut' }}
+        className="relative z-10 max-w-[90vw] max-h-[85vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         <img
           src={capturedImages[index]}
           alt={`Capture ${index + 1}`}
-          className="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain
-            animate-in fade-in zoom-in-95 duration-200"
-          style={{ animation: 'none' }}
+          className="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain"
         />
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

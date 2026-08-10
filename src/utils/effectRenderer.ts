@@ -387,4 +387,59 @@ export class EffectRenderer {
     capCtx.drawImage(this.canvas, 0, 0);
     return cap.toDataURL('image/png');
   }
+
+  /* ── Render a single thumbnail with a specific effect ── */
+
+  renderThumbnail(effect: EffectType, intensity: number, tw: number, th: number): string {
+    const video = this.video;
+    if (video.readyState < 2) {
+      // Return empty if no video frame yet
+      const empty = document.createElement('canvas');
+      empty.width = tw;
+      empty.height = th;
+      return empty.toDataURL();
+    }
+
+    const thumb = document.createElement('canvas');
+    thumb.width = tw;
+    thumb.height = th;
+    const ctx = thumb.getContext('2d', { willReadFrequently: true })!;
+
+    const vw = video.videoWidth || tw;
+    const vh = video.videoHeight || th;
+    const { sx, sy, sw, sh } = computeCoverRect(vw, vh, tw, th);
+
+    if (effect === 'none') {
+      ctx.drawImage(video, sx, sy, sw, sh, 0, 0, tw, th);
+    } else if (effect === 'ascii') {
+      renderAscii(ctx, video, tw, th, intensity);
+    } else if (effect === 'particle') {
+      renderParticle(ctx, video, tw, th, intensity, this.frameCount);
+    } else {
+      // Pixel-shader effects
+      const off = document.createElement('canvas');
+      const sw2 = Math.round(tw / 2);
+      const sh2 = Math.round(th / 2);
+      off.width = sw2;
+      off.height = sh2;
+      const offCtx = off.getContext('2d', { willReadFrequently: true })!;
+      offCtx.drawImage(video, sx, sy, sw, sh, 0, 0, sw2, sh2);
+      const img = offCtx.getImageData(0, 0, sw2, sh2);
+      processPixels(img.data, sw2, sh2, effect, intensity, this.frameCount);
+      offCtx.putImageData(img, 0, 0);
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(off, 0, 0, tw, th);
+
+      // Post-process overlays
+      if (effect === 'crt') {
+        drawScanlines(ctx, tw, th, 0.08 + (intensity / 100) * 0.12);
+      }
+      if (effect === 'hologram') {
+        drawScanlines(ctx, tw, th, 0.04 + (intensity / 100) * 0.08);
+      }
+      drawVignette(ctx, tw, th);
+    }
+
+    return thumb.toDataURL('image/jpeg', 0.7);
+  }
 }

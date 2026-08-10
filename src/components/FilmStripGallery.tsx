@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
 import { Trash2, Image as ImageIcon, Camera } from 'lucide-react';
 import ImagePreviewModal from './ImagePreviewModal';
@@ -60,12 +61,17 @@ export default function FilmStripGallery() {
 
   if (capturedImages.length === 0) {
     return (
-      <div className="h-32 bg-museum-surface dark:bg-darkroom-surface rounded-2xl border border-dashed border-gray-200 dark:border-zinc-800 shrink-0 flex items-center justify-center gap-3 transition-colors duration-300">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="h-32 bg-museum-surface dark:bg-darkroom-surface rounded-2xl border border-dashed border-gray-200 dark:border-zinc-800 shrink-0 flex items-center justify-center gap-3 transition-colors duration-300"
+      >
         <Camera className="w-5 h-5 text-gray-300 dark:text-zinc-600" />
         <span className="text-sm text-gray-400 dark:text-zinc-500 font-medium">
           No captures yet — snap a photo above
         </span>
-      </div>
+      </motion.div>
     );
   }
 
@@ -144,55 +150,63 @@ export default function FilmStripGallery() {
                 scrollbarColor: 'rgba(0,0,0,0.15) transparent',
               }}
             >
-              {capturedImages.map((src, i) => (
-                <button
-                  key={`${src}-${i}`}
-                  onClick={() => setPreviewIndex(i)}
-                  onMouseEnter={() => setHoveredIndex(i)}
-                  onMouseLeave={() => setHoveredIndex(null)}
-                  className="relative shrink-0 snap-start group outline-none"
-                >
-                  {/* Thumbnail */}
-                  <div
-                    className="relative w-[100px] h-[80px] rounded-xl overflow-hidden
-                      bg-gray-100 dark:bg-zinc-900
-                      ring-1 ring-gray-200 dark:ring-zinc-700
-                      group-hover:ring-2 group-hover:ring-museum-primary/40 dark:group-hover:ring-darkroom-accent/40
-                      group-focus-visible:ring-2 group-focus-visible:ring-museum-primary dark:group-focus-visible:ring-darkroom-accent
-                      transition-all duration-200 ease-out
-                      group-hover:scale-[1.03] group-hover:shadow-md"
+              <AnimatePresence initial={false}>
+                {capturedImages.map((src, i) => (
+                  <motion.button
+                    key={`${src}-${i}`}
+                    initial={{ opacity: 0, scale: 0.85, x: -20 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    transition={{ duration: 0.35, ease: 'easeOut', delay: i * 0.03 }}
+                    layout
+                    onClick={() => setPreviewIndex(i)}
+                    onMouseEnter={() => setHoveredIndex(i)}
+                    onMouseLeave={() => setHoveredIndex(null)}
+                    className="relative shrink-0 snap-start group outline-none"
                   >
-                    <img
-                      src={src}
-                      alt={`Capture ${i + 1}`}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-
-                    {/* Delete overlay on hover */}
-                    <div
-                      className={`absolute inset-0 flex items-center justify-center
-                        bg-black/0 group-hover:bg-black/40
-                        transition-all duration-200 ${
-                        hoveredIndex === i ? 'opacity-100' : 'opacity-0'
-                      }`}
+                    {/* Thumbnail */}
+                    <motion.div
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      className="relative w-[100px] h-[80px] rounded-xl overflow-hidden
+                        bg-gray-100 dark:bg-zinc-900
+                        ring-1 ring-gray-200 dark:ring-zinc-700
+                        group-hover:ring-2 group-hover:ring-museum-primary/40 dark:group-hover:ring-darkroom-accent/40
+                        group-focus-visible:ring-2 group-focus-visible:ring-museum-primary dark:group-focus-visible:ring-darkroom-accent
+                        transition-all duration-200 ease-out
+                        shadow-sm"
                     >
-                      <span className="p-1.5 rounded-lg bg-red-500/80 text-white
-                        opacity-0 group-hover:opacity-100 transition-opacity duration-200
-                        hover:bg-red-500 active:scale-90"
-                        onClick={(e) => handleDelete(e, i)}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </span>
-                    </div>
-                  </div>
+                      <img
+                        src={src}
+                        alt={`Capture ${i + 1}`}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
 
-                  {/* Index label */}
-                  <span className="block text-center text-[10px] font-mono text-gray-400 dark:text-zinc-600 mt-1.5 select-none">
-                    #{i + 1}
-                  </span>
-                </button>
-              ))}
+                      {/* Delete overlay on hover */}
+                      <motion.div
+                        className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40"
+                        initial={false}
+                        animate={{ opacity: hoveredIndex === i ? 1 : 0 }}
+                        transition={{ duration: 0.15 }}
+                      >
+                        <motion.span
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          className="p-1.5 rounded-lg bg-red-500/80 text-white cursor-pointer"
+                          onClick={(e) => handleDelete(e, i)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </motion.span>
+                      </motion.div>
+                    </motion.div>
+
+                    {/* Index label */}
+                    <span className="block text-center text-[10px] font-mono text-gray-400 dark:text-zinc-600 mt-1.5 select-none">
+                      #{i + 1}
+                    </span>
+                  </motion.button>
+                ))}
+              </AnimatePresence>
 
               {/* End padding for snap */}
               <div className="shrink-0 w-2" />
