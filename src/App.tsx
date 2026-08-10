@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useAppStore } from './store/useAppStore';
 import Sidebar from './components/sidebar';
+import EffectsPanel from './components/EffectsPanel';
 
 function App() {
   const { theme, setTheme } = useAppStore();
@@ -29,9 +30,7 @@ function App() {
         </section>
 
         {/* Right Middle Panel: Effects Selection */}
-        <section className="w-full xl:w-[350px] bg-museum-surface dark:bg-darkroom-surface border-l border-gray-200 dark:border-zinc-800 p-6 overflow-y-auto shrink-0">
-           <span className="text-gray-400 font-medium">Effects Panel Container</span>
-        </section>
+        <EffectsPanel />
         {/* Far Right Panel: Export & Recent */}
         <section className="w-full xl:w-[280px] bg-museum-surface dark:bg-darkroom-surface border-l border-gray-200 dark:border-zinc-800 p-6 flex flex-col gap-6 overflow-y-auto shrink-0">
            <span className="text-gray-400 font-medium">Export Panel Container</span>
