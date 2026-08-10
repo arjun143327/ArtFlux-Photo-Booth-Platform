@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { useAppStore } from './store/useAppStore';
 import Sidebar from './components/sidebar';
 import EffectsPanel from './components/EffectsPanel';
+import CameraPreview from './components/CameraPreview';
+import FilmStripGallery from './components/FilmStripGallery';
 
 function App() {
   const { theme, setTheme } = useAppStore();
@@ -20,13 +22,9 @@ function App() {
 
         {/* Center Panel: Camera & Filmstrip */}
         <section className="flex-1 p-6 flex flex-col gap-6 overflow-y-auto">
-          <div className="flex-1 bg-museum-surface dark:bg-darkroom-surface rounded-2xl border border-gray-200 dark:border-zinc-800 flex items-center justify-center min-h-[400px]">
-             <span className="text-gray-400 font-medium">Camera Preview Container</span>
-          </div>
+          <CameraPreview />
 
-          <div className="h-32 bg-museum-surface dark:bg-darkroom-surface rounded-2xl border border-gray-200 dark:border-zinc-800 flex items-center justify-center shrink-0">
-             <span className="text-gray-400 font-medium">Film Strip Gallery</span>
-          </div>
+          <FilmStripGallery />
         </section>
 
         {/* Right Middle Panel: Effects Selection */}
