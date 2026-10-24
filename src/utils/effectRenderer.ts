@@ -60,10 +60,11 @@ function processPixels(
 function applyMatrix(data: Uint8ClampedArray, _w: number, _h: number, t: number, _frame: number): void {
   for (let i = 0; i < data.length; i += 4) {
     const gray = toGrayscale(data[i], data[i + 1], data[i + 2]);
-    const g = clamp(gray + 40 * t);
-    data[i]     = clamp(gray * 0.15);
-    data[i + 1] = clamp(g * (0.7 + 0.3 * t));
-    data[i + 2] = clamp(gray * 0.1);
+    // High contrast for deep blacks and glowing greens
+    const contrast = Math.pow(gray / 255, 1.2 + 0.5 * t) * 255;
+    data[i]     = clamp(contrast * 0.1 * (1 - t * 0.5));
+    data[i + 1] = clamp(contrast * (0.8 + 1.2 * t)); 
+    data[i + 2] = clamp(contrast * 0.1 * (1 - t * 0.5));
     data[i + 3] = 255;
   }
 }
@@ -78,7 +79,7 @@ function applyNeon(data: Uint8ClampedArray, w: number, h: number, t: number): vo
     gray[p] = toGrayscale(data[i], data[i + 1], data[i + 2]) | 0;
   }
 
-  const sensitivity = 30 + t * 120;
+  const sensitivity = 20 + (1 - t) * 60; // Lower sensitivity = more edges detected
 
   for (let y = 1; y < h - 1; y++) {
     for (let x = 1; x < w - 1; x++) {
@@ -92,17 +93,21 @@ function applyNeon(data: Uint8ClampedArray, w: number, h: number, t: number): vo
         -1 * gray[idx - w - 1] - 2 * gray[idx - w]     - 1 * gray[idx - w + 1]
         + 1 * gray[idx + w - 1] + 2 * gray[idx + w]     + 1 * gray[idx + w + 1];
 
-      const mag = Math.min(255, Math.sqrt(gx * gx + gy * gy));
+      const mag = Math.sqrt(gx * gx + gy * gy);
       const pixel = (y * w + x) * 4;
 
       if (mag > sensitivity) {
         const angle = Math.atan2(gy, gx);
-        data[pixel]     = clamp(128 + 127 * Math.sin(angle) * t);
-        data[pixel + 1] = clamp(128 + 127 * Math.sin(angle + 2.09) * t);
-        data[pixel + 2] = clamp(128 + 127 * Math.sin(angle + 4.19) * t);
+        // Vibrant neon glow based on gradient angle
+        const intensityMult = (mag / 255) * (1.5 + t * 2);
+        data[pixel]     = clamp((128 + 127 * Math.sin(angle)) * intensityMult);
+        data[pixel + 1] = clamp((128 + 127 * Math.sin(angle + 2.09)) * intensityMult);
+        data[pixel + 2] = clamp((128 + 127 * Math.sin(angle + 4.19)) * intensityMult);
         data[pixel + 3] = 255;
       } else {
-        data[pixel] = data[pixel + 1] = data[pixel + 2] = clamp(mag * 0.15);
+        // Deep blue/black background for neon contrast
+        data[pixel] = data[pixel + 1] = clamp(mag * 0.1);
+        data[pixel + 2] = clamp(mag * 0.3);
         data[pixel + 3] = 255;
       }
     }
@@ -112,14 +117,19 @@ function applyNeon(data: Uint8ClampedArray, w: number, h: number, t: number): vo
 /* ── Hologram ─────────────────────────────────────────────── */
 
 function applyHologram(data: Uint8ClampedArray, _w: number, _h: number, t: number, _frame: number): void {
-  for (let i = 0; i < data.length; i += 4) {
-    const r = data[i];
+  // Chromatic aberration shift based on intensity
+  const shift = Math.floor(2 + 6 * t) * 4; 
+  
+  for (let i = data.length - 4; i >= 0; i -= 4) {
+    const rIdx = Math.max(0, i - shift);
+    const rShifted = data[rIdx]; // Grab red from left
     const g = data[i + 1];
     const b = data[i + 2];
 
-    data[i]     = clamp(r * (1 + 0.3 * t) + b * 0.15 * t);
-    data[i + 1] = clamp(g * (1 + 0.2 * t));
-    data[i + 2] = clamp(b * (1 + 0.4 * t) + r * 0.15 * t);
+    // Cyan/Blue tint with flickering transparency feel
+    data[i]     = clamp(rShifted * (0.3 + 0.2 * t));
+    data[i + 1] = clamp(g * (0.8 + 0.4 * t) + 20 * t);
+    data[i + 2] = clamp(b * (0.9 + 0.5 * t) + 60 * t);
     data[i + 3] = 255;
   }
 }
@@ -127,8 +137,7 @@ function applyHologram(data: Uint8ClampedArray, _w: number, _h: number, t: numbe
 /* ── CRT ──────────────────────────────────────────────────── */
 
 function applyCrt(data: Uint8ClampedArray, _w: number, _h: number, t: number, _frame: number): void {
-  const noiseAmount = t * 40;
-  // Pre-compute a noise buffer for this frame (faster than Math.random per pixel)
+  const noiseAmount = 15 + t * 45;
   const noiseLen = Math.min(data.length, 1024);
   const noise = new Uint8ClampedArray(noiseLen);
   const rng = lcg(_frame * 7919 + 1);
@@ -136,11 +145,16 @@ function applyCrt(data: Uint8ClampedArray, _w: number, _h: number, t: number, _f
     noise[i] = (rng() - 0.5) * noiseAmount * 2;
   }
 
-  for (let i = 0; i < data.length; i += 4) {
+  // Slight RGB split for CRT bleeding
+  const shift = 4; // 1 pixel shift
+
+  for (let i = data.length - 4; i >= 0; i -= 4) {
     const n = noise[i % noiseLen];
-    data[i]     = clamp(data[i]     + n);
-    data[i + 1] = clamp(data[i + 1] + n);
-    data[i + 2] = clamp(data[i + 2] + n);
+    const rIdx = Math.max(0, i - shift);
+    
+    data[i]     = clamp(data[rIdx] + n); // Shifted Red
+    data[i + 1] = clamp(data[i + 1] + n); // Normal Green
+    data[i + 2] = clamp(data[i + 2] + n * 1.5); // Normal Blue with extra noise
   }
 }
 

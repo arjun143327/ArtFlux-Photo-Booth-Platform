@@ -4,6 +4,7 @@ import Sidebar from './components/sidebar';
 import EffectsPanel from './components/EffectsPanel';
 import CameraPreview from './components/CameraPreview';
 import FilmStripGallery from './components/FilmStripGallery';
+import ExportPanel from './components/ExportPanel';
 
 function App() {
   const { theme, setTheme } = useAppStore();
@@ -30,9 +31,7 @@ function App() {
         {/* Right Middle Panel: Effects Selection */}
         <EffectsPanel />
         {/* Far Right Panel: Export & Recent */}
-        <section className="flex-1 min-w-[220px] bg-museum-surface dark:bg-darkroom-surface border-l border-gray-200 dark:border-zinc-800 p-6 flex flex-col gap-6 overflow-y-auto shrink-0">
-           <span className="text-gray-400 font-medium">Export Panel Container</span>
-        </section>
+        <ExportPanel />
       </main>
     </div>
   );
